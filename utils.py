@@ -14,6 +14,7 @@ from sympy import Number
 from math import sin , cos , atan2, pi , atan
 from matplotlib import colors , transforms
 from sklearn.metrics import mean_squared_error as mse
+from matplotlib import cm
 
 params = {'text.usetex' : False,
           'font.size' : 36,
@@ -50,8 +51,8 @@ def get_latin(scale=5, parameter_static_x = 2.8, parameter_static_y = 2.5):
     return robot_df
 
 def get_grid(scale=5,n_samples=300, 
-             parameter_static_x = 2.5, 
-             parameter_static_y = 2.5,
+             parameter_static_X = [2.5,3], 
+             parameter_static_Y = [2.5,2],
              th = 0.5,
              w2=10):
     arr = []
@@ -66,12 +67,13 @@ def get_grid(scale=5,n_samples=300,
     scaled_points_y = points_y.flatten()
     # Создаем массив уникальных точек
     points = list(zip(scaled_points_x , scaled_points_y))
-    for x,y in zip(scaled_points_x, scaled_points_y):
+    for parameter_static_x,parameter_static_y in zip(parameter_static_X,parameter_static_Y):
+        for x,y in zip(scaled_points_x, scaled_points_y):
 
-        distance = (parameter_static_x-x)**2/ 0.5**2 + (parameter_static_y-y)**2 / 0.5**2
-        obst_stat = 5*(pi/2 + atan(w2 - distance*w2))
-        arr.append([obst_stat, x, y])
-        obs_list.append(obst_stat)
+            distance = (parameter_static_x-x)**2/ 0.5**2 + (parameter_static_y-y)**2 / 0.5**2
+            obst_stat = 5*(pi/2 + atan(w2 - distance*w2))
+            arr.append([obst_stat, x, y])
+            obs_list.append(obst_stat)
 
     points = list(zip(scaled_points_x , scaled_points_y))
     arr = np.array(arr)
@@ -89,7 +91,7 @@ def get_robot_data(from_latin=True,from_file=False,
                    radius=0.3,
                    w2=10,
                    file_path='./data/hyper_random_xy.csv',
-                   step=2,parameter_static_x=2.5,parameter_static_y=2.5):
+                   step=2,parameter_static_X=[3,2.5],parameter_static_Y=[2,2.5]):
     if from_file:
         robot_df=pd.read_csv(file_path,sep=',',header=None).dropna(axis=0).astype('float32')
         robot_df.columns='j2,x,y'.split(',')
@@ -97,8 +99,8 @@ def get_robot_data(from_latin=True,from_file=False,
     elif from_sample:
         robot_df = robot_data_sample['j2,x,y'.split(',')]
     elif from_grid:
-        robot_df = get_grid(n_samples=n_samples,parameter_static_x = parameter_static_x, 
-             parameter_static_y = parameter_static_y)
+        robot_df = get_grid(n_samples=n_samples,parameter_static_X = parameter_static_X, 
+             parameter_static_Y = parameter_static_Y)
     else:
         robot_df = get_latin(n_samples=n_samples)
     robot_df.columns='j2,x,y'.split(',')
@@ -147,11 +149,11 @@ def get_transformer_model(max_input_points=20000,
 
 
 
-def get_potential(x):
-    potential_at_x = (pi/2 + atan(10 - (x-1) * 10)) * 15
+def get_potential(x,w1=2,s=15):
+    potential_at_x = (pi/2 + atan(w1 - (x) * w1)) * s
     return potential_at_x
 
-def create_cost_map(num_cells = 128):
+def create_cost_map(num_cells = 256):
 
     oc_grid = np.zeros((num_cells,num_cells))
 
@@ -271,11 +273,11 @@ def create_cost_map(num_cells = 128):
 
 
     cmap = colors.ListedColormap(['white' , 'black', 'red','green' ])
-    fig, ax = plt.subplots(figsize=(5,5))
-    ax.pcolor(oc_grid[::-1],cmap=cmap,edgecolors='w', linewidths=0.1)
-    ax.xaxis.set_visible(False)
-    ax.yaxis.set_visible(False)
+    #fig, ax = plt.subplots(figsize=(5,5))
+    #ax.pcolor(oc_grid[::-1],cmap=cmap,edgecolors='w', linewidths=0.1)
+    #ax.xaxis.set_visible(False)
+    #ax.yaxis.set_visible(False)
 
-    plt.show()
+    #plt.show()
 
     return cost_map
