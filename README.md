@@ -1,5 +1,3 @@
-# AIRI-7
-
 
 ## Description
 
